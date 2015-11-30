@@ -1,0 +1,25 @@
+language: rust
+sudo: false
+
+rust:
+  - stable
+
+addons:
+  apt:
+    packages:
+    - nasm 
+    - dh-autoreconf 
+
+before_script:
+- |
+    pip install 'travis-cargo<0.2' --user &&
+    export PATH=$HOME/.local/bin:$PATH
+
+script:
+- |
+    (cd thumbrs && travis-cargo build)
+
+env:
+  global:
+    # override the default `--features unstable` used for the nightly branch (optional)
+    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
