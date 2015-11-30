@@ -9,6 +9,7 @@ addons:
     packages:
     - nasm 
     - dh-autoreconf 
+    - libgexiv2-dev
 
 before_script:
 - |
