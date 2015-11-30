@@ -1,0 +1,39 @@
+[package]
+name = "thumbrs"
+version = "0.1.0"
+authors = ["Thorben Kroeger <thorbenkroeger@gmail.com>"]
+build = "build.rs"
+
+[features]
+default = ["serde_codegen"]
+nightly = ["serde_macros"]
+
+[dependencies]
+docopt = "^0.6.76"
+filetime = "0.1.6"
+image = "0.3"
+libc = "0.2.2"
+log = "0.3"
+num = "0.1"
+rexiv2 = "0.3.2"
+rustc-serialize = "0.3"
+serde = "^0.6.1"
+serde_json = "^0.6.0"
+serde_macros = { version = "^0.6.1", optional = true }
+sha1 = "0.1.1"
+walkdir = "0.1"
+
+# Note:
+# Compiles mozjpeg, need to do at least
+#
+# sudo apt-get install nasm dh-autoreconf
+[dependencies.mozjpeg-sys]
+git = "https://github.com/thorbenk/mozjpeg-sys.git"
+
+[dependencies.chrono]
+version = "0.2"
+features = ["rustc-serialize"]
+
+[build-dependencies]
+syntex = "^0.22.0"
+serde_codegen = { version = "^0.6.4", optional = true }

@@ -1,0 +1,58 @@
+#[derive(Debug)]
+pub struct Timestamp(pub DateTime<Local>);
+
+impl Serialize for Timestamp {
+    fn serialize<S>(&self, serializer: &mut S) -> ::std::result::Result<(), S::Error> where S: Serializer {
+        serializer.visit_str(&self.0.to_rfc3339())
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum DigikamPickLabel {
+    None,
+    Rejected,
+    Pending,
+    Accepted
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DigikamColorLabel {
+    None,
+    Red,
+    Orange,
+    Yellow,
+    Green,
+    Blue,
+    Magenta,
+    Gray,
+    Black,
+    White
+}
+
+#[derive(Debug)]
+pub struct Metadata {
+    pub size : (u32, u32),
+
+    pub orientation : rexiv2::Orientation,
+
+    pub exposure_time : Option<num::rational::Ratio<i32>>,
+    pub iso_speed: Option<i32>,
+    pub fnumber: Option<num::rational::Ratio<i32>>,
+
+    pub lens_model: Option<String>,
+    pub camera_model: Option<String>,
+
+    pub rating: Option<i32>,
+    pub tags: Vec<String>,
+    pub digikam_pick_label: Option<DigikamPickLabel>,
+    pub digikam_color_label: Option<DigikamColorLabel>
+}
+
+#[derive(Debug, Serialize)]
+pub struct FileInfo {
+    pub filename: String,
+    pub sha1sum: String,
+    pub modified_time: Timestamp,
+    pub metadata: Metadata,
+    pub thumbnail_sizes: Vec<(u32, u32)>
+}
