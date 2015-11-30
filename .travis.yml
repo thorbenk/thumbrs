@@ -17,7 +17,7 @@ before_script:
 
 script:
 - |
-    (cd thumbrs && travis-cargo build)
+    travis-cargo build
 
 env:
   global:
