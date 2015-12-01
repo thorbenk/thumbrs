@@ -13,6 +13,9 @@ use serde::{self, Deserializer, Serialize, Serializer};
 #[cfg(not(feature = "serde_macros"))]
 include!(concat!(env!("OUT_DIR"), "/types.rs"));
 
+#[cfg(feature = "serde_macros")]
+include!("types.rs.in");
+
 struct RatioWrapper<'a> {
     ratio: &'a Option<num::rational::Ratio<i32>>
 }
