@@ -22,5 +22,5 @@ pub mod metadata;
 pub mod thumbnail;
 
 pub use jpegimpex::{read_jpeg, write_jpeg};
-pub use metadata::{Metadata, FileInfo, Timestamp};
+pub use metadata::{Metadata, FileInfo};
 pub use thumbnail::{make_thumbnail, read_and_rotate};

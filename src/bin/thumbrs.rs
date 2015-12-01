@@ -160,6 +160,19 @@ fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, an
         .ok()
         .expect("Could not create output dir");
 
+    // where to write an index for this directorie's images
+    let json_file_name = "_".to_string() + input_path.file_name().unwrap().to_str().unwrap() + ".json";
+    let json_file = output_path.join(&json_file_name);
+
+    // check if path exists
+    let f = File::open(&json_file);
+    if f.is_ok() {
+        let f = f.unwrap();
+        println!("reading from {:?}", f);
+        let x : serde_json::error::Result<Vec<FileInfo>> = serde_json::from_reader(f);
+        println!("{:?}", x);
+    }
+
     let mut generation_infos = Vec::<FileInfo>::new();
 
     let sizes: Vec<u32> = vec![100, 200, 300, 640, 800, 1024, 1920];
@@ -237,7 +250,7 @@ fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, an
             .ok()
             .expect("Could not compute SHA1 sum");
 
-        let timestamp = Timestamp(mtime); 
+        let timestamp = mtime; 
         let file_info = FileInfo { filename: in_abspath.to_str().unwrap().to_string(), sha1sum: hexdigest, modified_time: timestamp, metadata: m.unwrap(), thumbnail_sizes: thumbnail_sizes };
 
         generation_infos.push(file_info);
@@ -247,12 +260,9 @@ fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, an
     if generation_infos.len() > 0 {
         let j = serde_json::to_string_pretty(&generation_infos).unwrap();
 
-        let f = "_".to_string() + input_path.file_name().unwrap().to_str().unwrap() + ".json";
-
-        let msg = String::new() + "{meta: " + &f + "}";
+        let msg = String::new() + "{meta: " + &json_file_name + "}";
         println!("      {}{}", tree_prefix(&ancestor_at_end), &msg);
        
-        let json_file = output_path.join(f);
         let mut f = File::create(json_file).unwrap();
         match f.write_all(j.as_bytes()) {
             Ok (_) => (),
