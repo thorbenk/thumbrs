@@ -1,4 +1,4 @@
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum DigikamPickLabel {
     None,
     Rejected,
@@ -6,7 +6,7 @@ pub enum DigikamPickLabel {
     Accepted
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DigikamColorLabel {
     None,
     Red,
@@ -20,13 +20,13 @@ pub enum DigikamColorLabel {
     White
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RatioWrapper(num::rational::Ratio<i32>);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OrientationWrapper(Orientation);
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Metadata {
     pub size : (u32, u32),
 
@@ -45,7 +45,7 @@ pub struct Metadata {
     pub digikam_color_label: Option<DigikamColorLabel>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileInfo {
     pub filename: String,
     pub sha1sum: String,
@@ -53,3 +53,4 @@ pub struct FileInfo {
     pub metadata: Metadata,
     pub thumbnail_sizes: Vec<(u32, u32)>
 }
+

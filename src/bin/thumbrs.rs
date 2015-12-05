@@ -38,6 +38,14 @@ use docopt::Docopt;
 use std::thread;
 use std::sync::{Arc, mpsc};
 
+struct Options {
+    generate_thumbnails: bool,
+    compare_by_hash: bool,
+    thumbnail_sizes: Vec<u32>,
+    thumbnail_qualities: Vec<u8>,
+    hidden_dirs: Vec<String>,
+}
+
 // Iterate through `iter` while it matches `prefix`; return `None` if `prefix`
 // is not a prefix of `iter`, otherwise return `Some(iter_after_prefix)` giving
 // `iter` after having exhausted `prefix`.
@@ -62,7 +70,6 @@ fn strip_prefix<'a> (path: &'a Path, base: &'a Path) -> Option<&'a Path> {
     iter_after(path.components(), base.components()).map(|c| c.as_path())
 }
 
-#[allow(dead_code)]
 fn file_sha1 (path: &Path) -> io::Result<String> {
     let mut f = try!(File::open(path));
     let mut buffer: Vec<u8> = Vec::new();
@@ -72,7 +79,6 @@ fn file_sha1 (path: &Path) -> io::Result<String> {
     return Ok(s.hexdigest());
 }
 
-#[allow(dead_code)]
 fn get_mtime(metadata: &Result<fs::Metadata, std::io::Error>) -> DateTime<Local> {
     let mtime = metadata.as_ref().map(|meta| {
         FileTime::from_last_modification_time(&meta)
@@ -83,12 +89,16 @@ fn get_mtime(metadata: &Result<fs::Metadata, std::io::Error>) -> DateTime<Local>
      .unwrap_or(Local::now())
 }
 
-fn walk_filetree(input_path: &Path, output_path: &Path, no_thumbs: bool) {
-    walk_filetree_impl(&input_path, &output_path, no_thumbs, Vec::new());
+fn walk_filetree(input_path: &Path, output_path: &Path, opt: &Options) {
+    walk_filetree_impl(&input_path, &input_path, &output_path, &opt, Vec::new());
 }
 
-fn is_dir (entry: &fs::DirEntry) -> bool {
-    // let hidden_dirs = ["0-sterne", "raw"];
+fn is_dir (entry: &fs::DirEntry, options: &Options) -> bool {
+    let dir_name = String::from(entry.file_name().to_str().unwrap());
+    if let Some(_) = options.hidden_dirs.iter().find(|&e| e == &dir_name)
+    {
+        return false;
+    }
     entry.metadata().unwrap().is_dir()
 }
 
@@ -123,7 +133,13 @@ fn tree_line (progress: Option<(u32, u32)>, ancestor_at_end: &Vec<bool>, has_sub
       + suffix
 }
 
-fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, ancestor_at_end: Vec<bool>) {
+fn walk_filetree_impl(
+    input_prefix: &Path,
+    input_path: &Path,
+    output_path: &Path,
+    options: &Options,
+    ancestor_at_end: Vec<bool>)
+{
     let dir_iter = match fs::read_dir(input_path) {
         Ok(i) => i,
         Err(_) => {
@@ -144,7 +160,7 @@ fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, an
         });
 
     let sub_dirs = dir_contents.iter()
-        .filter(|e| is_dir(*e))
+        .filter(|e| is_dir(*e, &options))
         .collect::<Vec<_>>();
 
     let jpegs = dir_contents.iter()
@@ -160,100 +176,122 @@ fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, an
         .ok()
         .expect("Could not create output dir");
 
-    // where to write an index for this directorie's images
+    // where to write an index for this directory's images
     let json_file_name = "_".to_string() + input_path.file_name().unwrap().to_str().unwrap() + ".json";
     let json_file = output_path.join(&json_file_name);
 
+    let mut existing_file_infos = Vec::<FileInfo>::new();
     // check if path exists
-    let f = File::open(&json_file);
-    if f.is_ok() {
-        let f = f.unwrap();
-        println!("reading from {:?}", f);
+    if let Ok(f) = File::open(&json_file) {
+        // println!("reading from {:?}", f);
         let x : serde_json::error::Result<Vec<FileInfo>> = serde_json::from_reader(f);
-        println!("{:?}", x);
+        existing_file_infos = x.ok().unwrap();
     }
+    //println!("existing_file_infos {:?}", existing_file_infos);
 
     let mut generation_infos = Vec::<FileInfo>::new();
 
-    let sizes: Vec<u32> = vec![100, 200, 300, 640, 800, 1024, 1920];
-    let qualities: Vec<u8> = vec![75, 75, 75, 88, 88, 88, 88];
-    assert!(sizes.len() == qualities.len());
-    let thumbnail_count = sizes.len();
+    //assert!(sizes.len() == qualities.len());
+    let thumbnail_count = options.thumbnail_sizes.len();
 
     let jpeg_count = jpegs.len();
     for (i, curr_entry) in jpegs.iter().enumerate() {
 
         // absolute path to source image
         let in_abspath = curr_entry.path();
+        // path to source image, relvative to photo collection root
+        let in_relpath = strip_prefix(&in_abspath, &input_prefix).unwrap();
 
         // filename of source image
         // TODO: can simplify to filename() of path or sth.
         let in_fname = strip_prefix(&in_abspath, &input_path).unwrap();
 
-        // filename of output image, corresponding to source image
-        // (we will append suffixes to this for different thumbnail sizes)
-        let out_abspath = output_path.join(in_fname);
+        let prev_info = existing_file_infos
+            .iter().find(|&e| e.filename == in_relpath.to_str().unwrap());
         
-        let has_subcontent = i < jpeg_count - 1;
-
-        let update_line = |curr_i: u32| {
-            let t = tree_line(Some((curr_i as u32, (thumbnail_count+1) as u32)), &ancestor_at_end, has_subcontent, in_fname.to_str().unwrap());
-            let _ = std::io::stdout().write( (String::new() + "\r" + &t).as_bytes());
-            let _ = std::io::stdout().flush();
-        };
-
-        let m = Metadata::from(&in_abspath);
-
-        ////
-
-        let thumbnail_sizes = match no_thumbs {
-            true => Vec::<(u32,u32)>::new (),
-            false => {
-                let mut tsizes = Vec::<(u32,u32)>::new ();
-                let (tx, rx) = mpsc::channel();
-
-                let img = read_and_rotate (&in_abspath);
-
-                update_line (1);
-
-                let shared_img = Arc::new(img);
-
-                for (size, quality) in sizes.iter().cloned().zip(qualities.iter().cloned()) {
-                    let tx = tx.clone();
-
-                    let out = out_abspath.clone ();
-
-                    let local_img = shared_img.clone();
-                    thread::spawn(move || {
-                        //println!("MAKE THUMB {} {} {:?}", size, quality, &out);
-                        let (w,h) = make_thumbnail (&local_img, size, quality, &out);
-                        tx.send((w, h)).unwrap();
-                    });
-                }
-
-                for i in 0..thumbnail_count {
-                    let (w,h) = rx.recv().unwrap();
-
-                    update_line ((i+2) as u32);
-
-                    tsizes.push((w, h));
-                }
-                tsizes
-            }
-        };
-
-        let _ = std::io::stdout().write("\n".as_bytes());
-        let _ = std::io::stdout().flush();
+        //println!("* prev info {:?} {:?}", in_relpath, prev_info);
 
         let mtime = get_mtime(&curr_entry.metadata());
-        let hexdigest = file_sha1(&curr_entry.path())
-            .ok()
-            .expect("Could not compute SHA1 sum");
 
-        let timestamp = mtime; 
-        let file_info = FileInfo { filename: in_abspath.to_str().unwrap().to_string(), sha1sum: hexdigest, modified_time: timestamp, metadata: m.unwrap(), thumbnail_sizes: thumbnail_sizes };
+        let mut regenerate = false;
+        if let Some(info) = prev_info {
+            if mtime > info.modified_time {
+                println!("image is OUT OF DATE");
+                regenerate = true;
+            }
+            else {
+                //println!("generated stuff if RECENT ENOUGH");
+            }
+        }
 
-        generation_infos.push(file_info);
+        if regenerate {
+            let hexdigest = file_sha1(&curr_entry.path())
+                .ok()
+                .expect("Could not compute SHA1 sum");
+
+            // filename of output image, corresponding to source image
+            // (we will append suffixes to this for different thumbnail sizes)
+            let out_abspath = output_path.join(in_fname);
+        
+            let has_subcontent = i < jpeg_count - 1;
+
+            let update_line = |curr_i: u32| {
+                let t = tree_line(Some((curr_i as u32, (thumbnail_count+1) as u32)), &ancestor_at_end, has_subcontent, in_fname.to_str().unwrap());
+                let _ = std::io::stdout().write( (String::new() + "\r" + &t).as_bytes());
+                let _ = std::io::stdout().flush();
+            };
+
+            let m = Metadata::from(&in_abspath);
+
+            ////
+
+            let thumbnail_sizes = match options.generate_thumbnails {
+                false => Vec::<(u32,u32)>::new (),
+                true => {
+                    let mut tsizes = Vec::<(u32,u32)>::new ();
+                    let (tx, rx) = mpsc::channel();
+
+                    let img = read_and_rotate (&in_abspath);
+
+                    update_line (1);
+
+                    let shared_img = Arc::new(img);
+
+                    for (size, quality) in options.thumbnail_sizes.iter().cloned().zip(options.thumbnail_qualities.iter().cloned()) {
+                        let tx = tx.clone();
+
+                        let out = out_abspath.clone ();
+
+                        let local_img = shared_img.clone();
+                        thread::spawn(move || {
+                            //println!("MAKE THUMB {} {} {:?}", size, quality, &out);
+                            let (w,h) = make_thumbnail (&local_img, size, quality, &out);
+                            tx.send((w, h)).unwrap();
+                        });
+                    }
+
+                    for i in 0..thumbnail_count {
+                        let (w,h) = rx.recv().unwrap();
+
+                        update_line ((i+2) as u32);
+
+                        tsizes.push((w, h));
+                    }
+                    tsizes
+                }
+            };
+
+            let _ = std::io::stdout().write("\n".as_bytes());
+            let _ = std::io::stdout().flush();
+
+            let timestamp = mtime; 
+            let file_info = FileInfo { filename: in_relpath.to_str().unwrap().to_string(), sha1sum: hexdigest, modified_time: timestamp, metadata: m.unwrap(), thumbnail_sizes: thumbnail_sizes };
+
+            generation_infos.push(file_info);
+        }
+        else {
+            generation_infos.push(prev_info.unwrap().clone());
+        }
     }
 
 
@@ -282,7 +320,7 @@ fn walk_filetree_impl(input_path: &Path, output_path: &Path, no_thumbs: bool, an
             println!("{}", t);
             let mut a = ancestor_at_end.clone();
             a.push(has_subcontent);
-            walk_filetree_impl(&dir.path(), &out_file, no_thumbs, a);
+            walk_filetree_impl(&input_prefix, &dir.path(), &out_file, &options, a);
         }
         else {
             let has_subcontent = false;
@@ -318,12 +356,24 @@ fn main() {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    println!("Rust thumbnail and meta-data extractor.");
-    println!("");
-
     let inpath = Path::new(&args.arg_inpath);
     let outpath = Path::new(&args.arg_outpath);
     let no_thumbs = args.flag_no_thumbs;
 
-    walk_filetree(&inpath, &outpath, no_thumbs);
+    let opt = Options {
+        generate_thumbnails: !no_thumbs,
+        compare_by_hash: false,
+        thumbnail_sizes: vec![100, 200, 300, 640, 800, 1024, 1920],
+        thumbnail_qualities: vec![75, 75, 75, 88, 88, 88, 88],
+        hidden_dirs : vec![String::from("0-sterne"), String::from("raw")]
+    };
+
+    println!("Rust thumbnail and meta-data extractor.");
+    println!("");
+    println!("Generate thumbnails/metadata");
+    println!("  in:  {}", &args.arg_inpath);
+    println!("  out: {}", &args.arg_outpath);
+    println!("");
+
+    walk_filetree(&inpath, &outpath, &opt);
 }
