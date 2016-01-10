@@ -9,19 +9,19 @@ default = ["serde_codegen"]
 nightly = ["serde_macros"]
 
 [dependencies]
-docopt = "^0.6.76"
-filetime = "0.1.6"
-image = "^0.5.4"
-libc = "0.2.2"
-log = "0.3"
-num = "0.1"
-rexiv2 = "0.3.2"
-rustc-serialize = "0.3"
-serde = "^0.6.1"
+docopt = "^0.6.78"
+filetime = "^0.1.9"
+image = "^0.6.1"
+libc = "^0.2.4"
+log = "^0.3"
+num = "^0.1.30"
+rexiv2 = "^0.3.2"
+rustc-serialize = "^0.3.16"
+serde = "^0.6.7"
 serde_json = "^0.6.0"
-serde_macros = { version = "^0.6.1", optional = true }
-sha1 = "0.1.1"
-walkdir = "0.1"
+serde_macros = { version = "^0.6.5", optional = true }
+sha1 = "^0.1.1"
+walkdir = "^0.1.5"
 
 # Note:
 # Compiles mozjpeg, need to do at least
@@ -35,5 +35,5 @@ version = "^0.2.17"
 features = ["rustc-serialize", "serde"]
 
 [build-dependencies]
-syntex = "^0.22.0"
+syntex = "^0.25.0"
 serde_codegen = { version = "^0.6.4", optional = true }
