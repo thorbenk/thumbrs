@@ -21,9 +21,6 @@ pub enum DigikamColorLabel {
 }
 
 #[derive(Debug, Clone)]
-pub struct RatioWrapper(num::rational::Ratio<i32>);
-
-#[derive(Debug, Clone)]
 pub struct OrientationWrapper(Orientation);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,9 +29,9 @@ pub struct Metadata {
 
     pub orientation : OrientationWrapper,
 
-    pub exposure_time : Option<RatioWrapper>,
+    pub exposure_time : Option<num::rational::Ratio<i32>>,
     pub iso_speed: Option<i32>,
-    pub fnumber: Option<RatioWrapper>,
+    pub fnumber: Option<num::rational::Ratio<i32>>,
 
     pub lens_model: Option<String>,
     pub camera_model: Option<String>,

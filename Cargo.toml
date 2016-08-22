@@ -9,31 +9,28 @@ default = ["serde_codegen"]
 nightly = ["serde_macros"]
 
 [dependencies]
-docopt = "^0.6.78"
-filetime = "^0.1.9"
-image = "^0.6.1"
-libc = "^0.2.4"
-log = "^0.3"
-num = "^0.1.30"
-rexiv2 = "^0.3.2"
-serde = "^0.6.7"
-serde_json = "^0.6.0"
-serde_macros = { version = "^0.6.5", optional = true }
-sha1 = "^0.1.1"
-walkdir = "^0.1.5"
+chrono = { version = "^0.2.17", default-features = false, features = ["serde"] }
+docopt = "^0.6.82"
+filetime = "^0.1.10"
+image = "^0.10.3"
+libc = "^0.2"
+log = "*"
+mozjpeg-sys = "^0.3.2"
+num-rational = {version = "^0.1.35", default-features = false, features=["serde"] }
+num = {version = "^0.1.30", default-features = false}
+rexiv2 = "^0.4.0"
 rustc-serialize = "*"
+serde = "^0.8"
+serde_json = "^0.8"
+serde_macros = { version = "^0.8", optional = true }
+sha1 = "^0.2.0"
+walkdir = "^0.1.5"
 
 # Note:
 # Compiles mozjpeg, need to do at least
 #
 # sudo apt-get install nasm dh-autoreconf
-[dependencies.mozjpeg-sys]
-git = "https://github.com/thorbenk/mozjpeg-sys.git"
 
-[dependencies.chrono]
-version = "^0.2.17"
-features = ["rustc-serialize", "serde"]
 
 [build-dependencies]
-syntex = "^0.25.0"
-serde_codegen = { version = "^0.6.4", optional = true }
+serde_codegen = { version = "^0.8", optional = true }

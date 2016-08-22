@@ -76,7 +76,7 @@ fn file_sha1 (path: &Path) -> io::Result<String> {
     let _ = try!(f.read_to_end(&mut buffer));
     let mut s = sha1::Sha1::new();
     s.update(&buffer);
-    return Ok(s.hexdigest());
+    return Ok(s.digest().to_string());
 }
 
 fn get_mtime(metadata: &Result<fs::Metadata, std::io::Error>) -> DateTime<Local> {
