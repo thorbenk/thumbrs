@@ -16,12 +16,12 @@ libc = "^0.2.4"
 log = "^0.3"
 num = "^0.1.30"
 rexiv2 = "^0.3.2"
-rustc-serialize = "^0.3.16"
 serde = "^0.6.7"
 serde_json = "^0.6.0"
 serde_macros = { version = "^0.6.5", optional = true }
 sha1 = "^0.1.1"
 walkdir = "^0.1.5"
+rustc-serialize = "*"
 
 # Note:
 # Compiles mozjpeg, need to do at least

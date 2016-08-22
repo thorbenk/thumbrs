@@ -6,7 +6,6 @@ extern crate walkdir;
 extern crate filetime;
 extern crate sha1;
 extern crate chrono;
-extern crate rustc_serialize;
 extern crate image;
 #[macro_use]
 extern crate log;
@@ -15,6 +14,7 @@ extern crate num;
 extern crate serde;
 extern crate serde_json;
 extern crate docopt;
+extern crate rustc_serialize;
 
 extern crate thumbrs;
 use thumbrs::*;
@@ -213,13 +213,13 @@ fn walk_filetree_impl(
 
         let mtime = get_mtime(&curr_entry.metadata());
 
-        let mut regenerate = false;
+        let mut regenerate = true;
         if let Some(info) = prev_info {
             if mtime > info.modified_time {
                 println!("image is OUT OF DATE");
-                regenerate = true;
             }
             else {
+                regenerate = false;
                 //println!("generated stuff if RECENT ENOUGH");
             }
         }
@@ -289,7 +289,7 @@ fn walk_filetree_impl(
 
             generation_infos.push(file_info);
         }
-        else {
+        else if prev_info.is_some() {
             generation_infos.push(prev_info.unwrap().clone());
         }
     }

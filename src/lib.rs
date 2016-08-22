@@ -11,7 +11,6 @@ extern crate libc;
 extern crate mozjpeg_sys;
 extern crate num;
 extern crate rexiv2;
-extern crate rustc_serialize;
 extern crate serde;
 extern crate serde_json;
 extern crate sha1;
