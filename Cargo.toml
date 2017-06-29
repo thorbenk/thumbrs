@@ -17,7 +17,7 @@ libc = "^0.2"
 log = "*"
 mozjpeg-sys = "^0.3.2"
 num-rational = {version = "^0.1.35", default-features = false, features=["serde"] }
-num = {version = "^0.1.30", default-features = false}
+num = {version = "^0.1.30", default-features = false, features=["num-rational"]}
 rexiv2 = "^0.4.0"
 rustc-serialize = "*"
 serde = "^0.8"

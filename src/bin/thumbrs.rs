@@ -38,6 +38,7 @@ use docopt::Docopt;
 use std::thread;
 use std::sync::{Arc, mpsc};
 
+#[allow(dead_code)]
 struct Options {
     generate_thumbnails: bool,
     compare_by_hash: bool,

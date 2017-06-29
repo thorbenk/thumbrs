@@ -8,9 +8,7 @@ use std::path::Path;
 use jpegimpex::read_jpeg_size;
 use chrono::datetime::DateTime;
 use chrono::Local;
-use serde::{self, Deserializer, Serialize, Serializer};
-use serde::de::{EnumVisitor};
-use num::rational::Ratio;
+use serde::{self, Serialize, Serializer};
 
 #[cfg(not(feature = "serde_macros"))]
 include!(concat!(env!("OUT_DIR"), "/types.rs"));

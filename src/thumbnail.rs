@@ -1,6 +1,5 @@
 use image;
 use image::{GenericImage, DynamicImage, ImageRgba8};
-use image::imageops::*;
 
 use rexiv2;
 use rexiv2::Orientation;

@@ -5,7 +5,6 @@ extern crate image;
 use std::path::Path;
 use std::ptr;
 
-use image::GenericImage;
 use image::DynamicImage;
 
 use std::mem;
