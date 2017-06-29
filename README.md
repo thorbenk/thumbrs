@@ -4,7 +4,7 @@ Photo thumbnailer and metadata extractor written in rust
 
 [![Build Status](https://travis-ci.org/thorbenk/thumbrs.svg?branch=master)](https://travis-ci.org/thorbenk/thumbrs)
 
-[screencast](https://raw.githubusercontent.com/thorbenk/thumbrs/master/thumbrs.gif)
+![screencast](https://raw.githubusercontent.com/thorbenk/thumbrs/master/thumbrs.gif)
 
 ## Usage
 
